@@ -84,7 +84,10 @@
     if (opts.prefer) headers['Prefer'] = opts.prefer;
     var conf = { method: opts.method || 'GET', headers: headers };
     if (opts.body) conf.body = JSON.stringify(opts.body);
-    return fetch(rest(c) + path, conf).then(async (r) => {
+    // 关键：apikey 同时放进查询参数。部分浏览器/代理会拦截自定义请求头，
+    // 导致钥匙丢失报 401；查询参数不受影响，双保险。
+    var sep = path.indexOf('?') >= 0 ? '&' : '?';
+    return fetch(rest(c) + path + sep + 'apikey=' + encodeURIComponent(opts.key), conf).then(async (r) => {
       var text = await r.text();
       var data = null;
       try { data = text ? JSON.parse(text) : null; } catch (e) { }
