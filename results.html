@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>抽签结果</title>
+<style>
+  :root{
+    --bg:#f7f5f1; --card:#fff; --line:#e8e2d8; --text:#2f2a24; --muted:#8a7f70;
+    --brand:#8b5a2b; --brand-soft:#f3e8dc; --ok:#1a7f37; --warn:#96271c;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;padding:20px 14px 40px;background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",Segoe UI,sans-serif;}
+  .wrap{max-width:1000px;margin:0 auto}
+  h1{font-size:20px;margin:0 0 4px}
+  .sub{color:var(--muted);font-size:13px;margin-bottom:16px}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+  .card .k{font-size:12px;color:var(--muted)}
+  .card .v{font-size:22px;font-weight:700;margin-top:4px}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .hd{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .hd input{flex:1;min-width:130px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px}
+  .btn{padding:7px 12px;border:1px solid var(--line);background:#fff;border-radius:8px;cursor:pointer;font-size:13px}
+  .btn:hover{background:var(--brand-soft)}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{padding:9px 12px;border-bottom:1px solid var(--line);text-align:left}
+  th{background:#faf7f2;font-weight:600;font-size:13px;color:var(--muted)}
+  tr:last-child td{border-bottom:none}
+  .pill{display:inline-block;padding:2px 9px;border-radius:999px;background:var(--brand-soft);color:var(--brand);font-size:12px;margin-right:4px}
+  .chosen{color:var(--ok);font-weight:700}
+  .none{color:#c3b7a9}
+  .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--ok);margin-right:6px}
+  .msg{padding:30px 16px;text-align:center;color:var(--muted);font-size:14px}
+  .err{color:var(--warn)}
+</style>
+</head>
+<body>
+<div class="wrap" id="app" style="display:none">
+  <h1>抽签结果</h1>
+  <div class="sub"><span class="dot"></span><span id="status">数据每 8 秒自动刷新</span></div>
+
+  <div class="cards" id="stats"></div>
+
+  <div class="panel">
+    <div class="hd">
+      <input id="kw" placeholder="搜索姓名…">
+      <button class="btn" id="refreshBtn">刷新</button>
+      <button class="btn" id="csvBtn">导出 Excel</button>
+    </div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th style="width:52px">#</th><th>抽签人</th><th>抽到的场景</th><th>最终选择</th><th>时间</th></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="wrap" id="fail" style="display:none">
+  <h1>抽签结果</h1>
+  <div class="panel"><div class="msg err" id="failMsg"></div></div>
+</div>
+
+<script src="sb.js"></script>
+<script>
+(function () {
+  var $ = function (s) { return document.querySelector(s) };
+  var data = [], scenes = [];
+  var timer = null;
+
+  function fmt(t) {
+    if (!t) return '';
+    var d = new Date(t), p = function (n) { return n < 10 ? '0' + n : n };
+    return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+
+  async function load() {
+    var j = await SB.listAll();
+    if (!j.ok) {
+      $('#app').style.display = 'none';
+      $('#fail').style.display = 'block';
+      $('#failMsg').textContent = j.msg || '读取失败';
+      return;
+    }
+    data = j.records; scenes = j.scenes;
+    $('#app').style.display = 'block';
+    $('#fail').style.display = 'none';
+    $('#status').textContent = '共 ' + data.length + ' 人，数据每 8 秒自动刷新（' + fmt(new Date()) + '）';
+    render();
+  }
+
+  function render() {
+    var kw = $('#kw').value.trim().toLowerCase();
+    var rows = data.filter(function (r) { return !kw || String(r.name).toLowerCase().indexOf(kw) >= 0 });
+
+    // 统计
+    var chosenCount = 0, dist = {};
+    scenes.forEach(function (s) { dist[s.id] = 0 });
+    data.forEach(function (r) { if (r.chosen) { chosenCount++; dist[r.chosen.id] = (dist[r.chosen.id] || 0) + 1 } });
+    var html = '<div class="card"><div class="k">已抽签人数</div><div class="v">' + data.length + '</div></div>' +
+      '<div class="card"><div class="k">已完成选择</div><div class="v">' + chosenCount + '</div></div>';
+    scenes.forEach(function (s) {
+      html += '<div class="card"><div class="k">' + s.name + '</div><div class="v">' + (dist[s.id] || 0) + ' 人</div></div>';
+    });
+    $('#stats').innerHTML = html;
+
+    $('#tbody').innerHTML = rows.length ? rows.map(function (r, i) {
+      return '<tr><td>' + (i + 1) + '</td>' +
+        '<td><b>' + r.name + '</b></td>' +
+        '<td>' + r.scenes.map(function (s) { return '<span class="pill">' + s.name + '</span>' }).join(' ') + '</td>' +
+        '<td class="' + (r.chosen ? 'chosen' : 'none') + '">' + (r.chosen ? r.chosen.name : '未选择') + '</td>' +
+        '<td>' + fmt(r.chosenAt || r.createdAt) + '</td></tr>';
+    }).join('') : '<tr><td colspan="5" style="text-align:center;color:#8a7f70;padding:26px">暂时还没有人抽签</td></tr>';
+  }
+
+  $('#kw').oninput = render;
+  $('#refreshBtn').onclick = load;
+  $('#csvBtn').onclick = function () {
+    var rows = [['序号', '抽签人', '抽到的场景', '最终选择', '抽签时间', '选择时间']];
+    data.forEach(function (r, i) {
+      rows.push([i + 1, r.name, r.scenes.map(function (s) { return s.name }).join(' + '),
+        r.chosen ? r.chosen.name : '', r.createdAt || '', r.chosenAt || '']);
+    });
+    var csv = rows.map(function (row) {
+      return row.map(function (c) { return '"' + String(c === undefined ? '' : c).replace(/"/g, '""') + '"' }).join(',');
+    }).join('\r\n');
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' }));
+    a.download = '抽签结果.csv';
+    a.click();
+  };
+
+  var c = SB.cfg();
+  if (!c.url || !c.svc) {
+    $('#fail').style.display = 'block';
+    $('#failMsg').textContent = '这个链接缺少管理参数，请打开管理后台页面里生成的完整链接。';
+    return;
+  }
+  load();
+  timer = setInterval(load, 8000);
+})();
+</script>
+</body>
+</html>

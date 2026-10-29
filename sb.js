@@ -25,14 +25,14 @@
   function ls(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
   function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) { } }
 
-  /* 从 URL hash 读取分享携带的配置：#u=<url>&k=<anon> */
+  /* 从 URL hash 读取链接自带配置：#u=<url>&k=<anon>&s=<service_role(可选，管理员专用)> */
   function fromHash() {
     try {
       var h = (location.hash || '').replace(/^#/, '');
       if (!h) return null;
       var p = new URLSearchParams(h);
-      var u = p.get('u'), k = p.get('k');
-      if (u && k) { lsSet(K_URL, u); lsSet(K_ANON, k); return { url: u, anon: k }; }
+      var u = p.get('u'), k = p.get('k'), s = p.get('s');
+      if (u && k) { lsSet(K_URL, u); lsSet(K_ANON, k); if (s) lsSet(K_SVC, s); return { url: u, anon: k, svc: s || '' }; }
     } catch (e) { }
     return null;
   }
@@ -43,7 +43,7 @@
     return {
       url: (h && h.url) || ls(K_URL) || (file.SUPABASE_URL || '').replace(/\/+$/, ''),
       anon: (h && h.anon) || ls(K_ANON) || (file.SUPABASE_ANON || ''),
-      svc: ls(K_SVC)
+      svc: (h && h.svc) || ls(K_SVC)
     };
   }
 

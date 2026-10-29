@@ -234,6 +234,17 @@
   $('#refreshBtn').onclick=load;
   $('#filter').onchange=()=>render(data);
   $('#kw').oninput=()=>render(data);
+
+  /* ---------- 免登录：链接自带管理员钥匙（#s=...）时直接进后台 ---------- */
+  (function autoLogin() {
+    const c = SB.cfg();
+    if (!c.url || !c.svc) return;
+    $('#lgUrl').value = c.url;
+    $('#lgAnon').value = c.anon || '';
+    $('#lgSvc').value = c.svc;
+    $('#lgErr').textContent = '链接里已带好钥匙，正在进入后台…';
+    setTimeout(login, 200);
+  })();
   /* ---------- 发布：把页面托管到自己的 Supabase Storage ---------- */
   const BUCKET = 'lottery';
 
