@@ -193,6 +193,40 @@
     return { ok: true, records: records, scenes: SCENES, usingService: !!c.svc };
   }
 
+  /* 无需管理员钥匙的结果读取：调用库里建好的 lottery_results() 视图函数。
+     只要页面带着公开的 anon key（已写进 config.js），谁打开都能看到，不必填任何东西。 */
+  async function listPublic() {
+    var c = cfg();
+    var file = global.LOTTERY_CONFIG || {};
+    var anonKey = c.anon || (file.SUPABASE_ANON || '');
+    if (!c.url) return { ok: false, msg: '页面缺少 Supabase 地址配置' };
+    if (!anonKey) return { ok: false, msg: '页面缺少 anon key 配置' };
+    var r = await req(c, '/rpc/lottery_results', { key: anonKey });
+    if (r.error) {
+      return {
+        ok: false,
+        msg: r.error,
+        status: r.status,
+        raw: r.raw,
+        hint: (r.status === 404)
+          ? '数据库里还没有 lottery_results() 这个函数，请到 Supabase → SQL Editor 执行一遍「免密钥读取.sql」'
+          : ('HTTP ' + r.status)
+      };
+    }
+    var sceneOf = function (id) { for (var i = 0; i < SCENES.length; i++) if (SCENES[i].id === id) return SCENES[i]; return null; };
+    var records = (r.data || []).map(function (x) {
+      return {
+        id: null,
+        name: x.name,
+        scenes: [sceneOf(x.scene_a), sceneOf(x.scene_b)].filter(Boolean),
+        chosen: x.scene_id ? sceneOf(x.scene_id) : null,
+        createdAt: x.drew_at,
+        chosenAt: x.chose_at
+      };
+    });
+    return { ok: true, records: records, scenes: SCENES };
+  }
+
   async function remove(drawId) {
     var c = cfg();
     // 外键为 ON DELETE CASCADE，choices 会自动清理
@@ -213,6 +247,6 @@
 
   global.SB = {
     SCENES: SCENES, cfg: cfg, ready: ready, saveAuth: saveAuth, clearAuth: clearAuth,
-    shareUrl: shareUrl, draw: draw, choose: choose, listAll: listAll, remove: remove, resetAll: resetAll
+    shareUrl: shareUrl, draw: draw, choose: choose, listAll: listAll, listPublic: listPublic, remove: remove, resetAll: resetAll
   };
 })(window);

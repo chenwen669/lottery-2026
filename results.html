@@ -77,11 +77,13 @@
   }
 
   async function load() {
-    var j = await SB.listAll();
+    var j = await SB.listPublic();
     if (!j.ok) {
       $('#app').style.display = 'none';
       $('#fail').style.display = 'block';
-      $('#failMsg').textContent = j.msg || '读取失败';
+      $('#failMsg').innerHTML = (j.hint || j.msg || '读取失败') +
+        (j.raw ? '<div style="margin-top:8px;font-size:12px;color:#8a7f70">云端返回：' +
+          String(JSON.stringify(j.raw)).slice(0, 160).replace(/</g, '&lt;') + '</div>' : '');
       return;
     }
     data = j.records; scenes = j.scenes;
@@ -132,10 +134,10 @@
     a.click();
   };
 
-  var c = SB.cfg();
-  if (!c.url || !c.svc) {
+  // 免密钥：地址栏不需要任何参数，直接用页面自带的公开权限读取
+  if (!SB.cfg().url) {
     $('#fail').style.display = 'block';
-    $('#failMsg').textContent = '这个链接缺少管理参数，请打开管理后台页面里生成的完整链接。';
+    $('#failMsg').textContent = '这个页面的 config.js 缺少 Supabase 地址配置。';
     return;
   }
   load();
