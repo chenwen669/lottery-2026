@@ -161,7 +161,13 @@
     if (!ready()) return { ok: false, msg: '尚未完成云端配置' };
     var d = await req(c, '/lottery_draws?select=id,name,scene_a,scene_b,created_at&order=created_at.asc', { key: key() });
     if (d.error) {
-      if (d.status === 401 || d.status === 403) return { ok: false, msg: '密钥权限不足，请填写 service_role key' };
+      if (d.status === 401 || d.status === 403) {
+        return {
+          ok: false,
+          msg: '密钥权限不足（' + d.status + '）：' + (d.error || '') +
+            '　请点 Supabase 后台 → Project Settings → API Keys 里 Secret key 那行的「复制」图标，重新贴一次（不要手划选文字）'
+        };
+      }
       return { ok: false, msg: d.error };
     }
     var ch = await req(c, '/lottery_choices?select=id,draw_id,name,scene_id,created_at', { key: key() });
