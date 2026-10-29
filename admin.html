@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>抽签管理端</title>
+<style>
+  :root{--red:#c0392b;--deep:#96271c;--gold:#c9a063;--ink:#2f2a26;--muted:#9a9088;--line:#eee3d6;--bg:#fdf9f4}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;color:var(--ink);background:var(--bg);min-height:100vh;padding:24px 16px 60px}
+  .wrap{max-width:1040px;margin:0 auto}
+  .top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+  h1{margin:0;font-size:24px;letter-spacing:3px;color:var(--deep)}
+  .top p{margin:4px 0 0;font-size:12.5px;color:var(--muted)}
+  .login{max-width:440px;margin:10vh auto;background:#fff;border:1px solid var(--line);border-radius:18px;padding:26px 22px;box-shadow:0 18px 40px rgba(140,100,60,.08)}
+  .login h2{margin:0 0 6px;font-size:19px;letter-spacing:2px}
+  .login p{margin:0 0 18px;font-size:12.5px;color:var(--muted);line-height:1.7}
+  .login label{display:block;font-size:12px;color:#8a7f74;margin:12px 0 6px}
+  input[type=url],input[type=text],input[type=password],textarea{width:100%;border:1.5px solid var(--line);border-radius:11px;
+    padding:11px 12px;font-size:14px;outline:none;background:#fffdfa;font-family:inherit;color:var(--ink)}
+  textarea{min-height:62px;resize:vertical;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;word-break:break-all}
+  input:focus,textarea:focus{border-color:var(--gold);box-shadow:0 0 0 4px rgba(201,160,99,.14)}
+  .btn{height:46px;border:none;border-radius:12px;cursor:pointer;color:#fff;font-size:15px;font-weight:700;letter-spacing:2px;
+    background:linear-gradient(180deg,#d9503a,#a83023);font-family:inherit;padding:0 20px}
+  .btn:active{transform:translateY(1px)}
+  .btn.ghost{background:#fff;color:var(--deep);border:1.5px solid var(--deep);font-size:13.5px;height:40px;padding:0 14px}
+  .btn.ghost.warn{color:var(--red);border-color:var(--red)}
+  .btn.small{height:32px;font-size:12px;padding:0 10px;border-radius:9px;background:#fff;color:var(--muted);border:1px solid var(--line);letter-spacing:0}
+  .btn.small:hover{color:var(--red);border-color:var(--red)}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(196px,1fr));gap:12px;margin-bottom:16px}
+  .stat{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:0 10px 26px rgba(140,100,60,.06)}
+  .stat .t{font-size:12px;color:var(--muted);letter-spacing:1px}
+  .stat .v{margin-top:4px;font-size:26px;font-weight:800;color:var(--deep)}
+  .stat .n{margin-top:2px;font-size:13px;color:var(--ink);font-weight:600}
+  .bar{margin-top:10px;height:7px;border-radius:99px;background:#f4ece2;overflow:hidden}
+  .bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#e0a05a,#c0392b);transition:width .5s}
+  .panel{background:#fff;border:1px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:0 14px 34px rgba(140,100,60,.07)}
+  .panel .hd{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:14px 16px;
+    border-bottom:1px solid var(--line);background:linear-gradient(180deg,#fffdf9,#fff)}
+  .panel .hd span{font-size:14px;font-weight:700;letter-spacing:1px}
+  .tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  select,input.search{border:1px solid var(--line);border-radius:9px;height:32px;padding:0 8px;font-size:12.5px;background:#fff;color:var(--ink);font-family:inherit}
+  .tbwrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th,td{padding:11px 14px;text-align:left;border-bottom:1px solid #f5ece2;white-space:nowrap}
+  th{background:#fdf7f0;color:#8a7f74;font-weight:600;font-size:12.5px}
+  tbody tr:hover{background:#fffaf4}
+  td.name{font-weight:700}
+  .chip{display:inline-block;font-size:11.5px;padding:3px 9px;border-radius:999px;margin-right:4px;background:#f4ece2;color:#7d7166}
+  .chip.on{background:linear-gradient(180deg,#d9503a,#a83023);color:#fff;font-weight:700}
+  td.time{color:var(--muted);font-size:12px}
+  .empty{padding:46px 16px;text-align:center;color:var(--muted);font-size:13.5px;line-height:1.8}
+  .live{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+  .dot{width:7px;height:7px;border-radius:50%;background:#43b581;box-shadow:0 0 0 3px rgba(67,181,129,.18)}
+  footer{margin-top:16px;text-align:center;font-size:12px;color:#bdb3a8;line-height:1.8}
+  .mask{position:fixed;inset:0;background:rgba(45,38,32,.45);display:none;align-items:center;justify-content:center;padding:18px;z-index:60}
+  .mask.show{display:flex}
+  .box{background:#fff;border-radius:18px;padding:22px;max-width:380px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,.24);max-height:88vh;overflow:auto}
+  .box h3{margin:0 0 8px;font-size:16px}
+  .box p{margin:0 0 18px;font-size:13px;color:var(--muted);line-height:1.7}
+  .row{display:flex;gap:10px;justify-content:flex-end}
+  .btn.danger{background:linear-gradient(180deg,#e05a45,#a83023)}
+  .sharebox{margin-top:14px;background:#f7f1e9;border-radius:12px;padding:12px}
+  .sharebox textarea{background:#fff}
+  .err{min-height:18px;font-size:12.5px;color:#c0392b;margin-top:10px}
+  .pill{display:inline-block;font-size:11px;padding:3px 8px;border-radius:999px;background:#eef5f1;color:#3d7a5c;margin-left:6px}
+  .pill.bad{background:#fdeceb;color:#c0392b}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div id="loginView" class="login">
+    <h2>🔐 抽签管理端</h2>
+    <p>用 Supabase 的 service_role key 登录，可查看所有抽签人的结果。<br>该密钥只保存在你的浏览器里，不会上传。</p>
+    <label>Supabase Project URL</label>
+    <input type="url" id="lgUrl" placeholder="https://xxxxxx.supabase.co">
+    <label>service_role key（必填）</label>
+    <textarea id="lgSvc" placeholder="eyJhbGciOi..."></textarea>
+    <label>anon key（可选，用于生成抽签链接）</label>
+    <textarea id="lgAnon" placeholder="eyJhbGciOi..."></textarea>
+    <div style="margin-top:16px"><button class="btn" id="lgBtn" style="width:100%">进入后台</button></div>
+    <div class="err" id="lgErr"></div>
+  </div>
+
+  <div id="mainView" style="display:none">
+    <div class="top">
+      <div>
+        <h1>抽签管理端 <span id="modePill" class="pill">service_role</span></h1>
+        <p>实时查看每位抽签人的抽取结果 · 数据自动刷新</p>
+      </div>
+      <span class="live"><i class="dot"></i><span id="lastUp">刚刚更新</span></span>
+    </div>
+
+    <div class="stats" id="stats"></div>
+
+    <div class="panel" style="margin-bottom:14px">
+      <div class="hd">
+        <span>抽签链接</span>
+        <div class="tools">
+          <button class="btn ghost" id="deployBtn">发布到 Supabase（生成永久链接）</button>
+          <button class="btn ghost" id="copyLink">复制链接</button>
+        </div>
+      </div>
+      <div style="padding:12px 16px">
+        <textarea id="shareLink" readonly style="width:100%;min-height:76px"></textarea>
+        <p id="deployTip" style="margin:8px 0 0;font-size:12px;color:var(--muted);line-height:1.8">
+          点「发布到 Supabase」会把抽签页上传到你自己项目的对象存储，生成任何人都能直接打开的永久公网链接，不依赖任何第三方托管。
+        </p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="hd">
+        <span>抽签明细 <b id="cnt" style="color:#c0392b">0</b> 人</span>
+        <div class="tools">
+          <select id="filter"><option value="">全部场景</option></select>
+          <input class="search" id="kw" placeholder="搜索姓名" style="width:120px">
+          <button class="btn ghost" id="exportBtn">导出 CSV</button>
+          <button class="btn ghost" id="refreshBtn">刷新</button>
+          <button class="btn ghost warn" id="resetBtn">清空全部</button>
+        </div>
+      </div>
+      <div class="tbwrap">
+        <table>
+          <thead><tr>
+            <th style="width:52px">序号</th><th>抽签人</th><th>抽到的两个场景</th>
+            <th>最终选择</th><th>抽签时间</th><th>选择时间</th><th style="width:76px">操作</th>
+          </tr></thead>
+          <tbody id="tbody"><tr><td colspan="7" class="empty">加载中…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <footer>删除某条记录后，该抽签人可重新抽签（需让他在结果页点「清除后重抽」）</footer>
+  </div>
+</div>
+
+<div class="mask" id="mask">
+  <div class="box">
+    <h3 id="mTitle">确认操作</h3>
+    <p id="mText"></p>
+    <div class="row">
+      <button class="btn ghost" id="mCancel">取消</button>
+      <button class="btn danger" id="mOk">确认</button>
+    </div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="sb.js"></script>
+<script>
+(function(){
+  const $=s=>document.querySelector(s);
+  let data=[],scenes=SB.SCENES,timer=null,pending=null;
+  const fmt=t=>t?new Date(t).toLocaleString('zh-CN',{hour12:false}):'—';
+  const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+  function confirmBox(t,x,fn){$('#mTitle').textContent=t;$('#mText').textContent=x;$('#mask').classList.add('show');pending=fn}
+  $('#mCancel').onclick=()=>{$('#mask').classList.remove('show');pending=null};
+  $('#mOk').onclick=()=>{const f=pending;$('#mask').classList.remove('show');pending=null;f&&f()};
+
+  async function login(){
+    const url=$('#lgUrl').value.trim(),svc=$('#lgSvc').value.trim(),anon=$('#lgAnon').value.trim();
+    if(!url||!svc){$('#lgErr').textContent='请填写项目地址和 service_role key';return}
+    // 防呆：两个 key 框互换了会直接点破
+    if(/^sb_publishable_/i.test(svc)){
+      $('#lgErr').textContent='两个钥匙贴反啦：上面这个框要填 sb_secret_ 开头的那串，下面填 sb_publishable_ 开头的那串 —— 对调一下再点';return}
+    if(/^sb_secret_/i.test(anon||'')){
+      $('#lgErr').textContent='下面这个框要填 sb_publishable_ 开头的 key，你填成了 sb_secret_ —— 和上面那框对调一下';return}
+    $('#lgErr').textContent='';
+    const fileCfg = window.LOTTERY_CONFIG || {};
+    const effAnon = anon || (fileCfg.SUPABASE_ANON || '');
+    SB.saveAuth(url, effAnon, svc); // 注意：绝不要把 service_role 写进分享链接
+
+    const j = await SB.listAll();
+    if (!j.ok) { $('#lgErr').textContent = j.msg || '连接失败'; return }
+    $('#loginView').style.display='none';$('#mainView').style.display='block';
+    scenes=j.scenes;
+    $('#modePill').className='pill'+(j.usingService?'':' bad');
+    $('#modePill').textContent=j.usingService?'service_role 已连接':'仅 anon（读取受限）';
+    const sel=$('#filter');
+    j.scenes.forEach(s=>{const o=document.createElement('option');o.value=s.id;o.textContent=s.name;sel.appendChild(o)});
+    const u = (SB.cfg().anon) ? SB.shareUrl() : '尚未填写 anon key —— 请在上方补全后登录，才能生成抽签链接';
+    $('#shareLink').value = u;
+    render(j.records);
+    clearInterval(timer);timer=setInterval(load,8000);
+  }
+
+  async function load(){
+    const j=await SB.listAll();
+    if(!j.ok){$('#tbody').innerHTML='<tr><td colspan="7" class="empty">'+esc(j.msg||'读取失败')+'</td></tr>';return}
+    render(j.records);
+  }
+
+  function render(records){
+    data=records||[];
+    $('#cnt').textContent=data.length;
+    $('#lastUp').textContent='更新于 '+new Date().toLocaleTimeString('zh-CN',{hour12:false});
+
+    const done=data.filter(r=>r.chosen).length;
+    const counts={};scenes.forEach(s=>counts[s.id]=0);
+    data.forEach(r=>{if(r.chosen)counts[r.chosen.id]++});
+    let html='<div class="stat"><div class="t">参与人数</div><div class="v">'+data.length+'</div>'+
+      '<div class="n">已选择 '+done+' 人 · 待选择 '+(data.length-done)+' 人</div>'+
+      '<div class="bar"><i style="width:'+(data.length?Math.round(done/data.length*100):0)+'%"></i></div></div>';
+    scenes.forEach(s=>{
+      const c=counts[s.id]||0,pct=done?Math.round(c/done*100):0;
+      html+='<div class="stat"><div class="t">'+s.name+'</div><div class="v">'+c+' <span style="font-size:13px;color:#9a9088">人</span></div>'+
+        '<div class="bar"><i style="width:'+pct+'%"></i></div><div class="n">占已选 '+pct+'%</div></div>';
+    });
+    $('#stats').innerHTML=html;
+
+    const fid=$('#filter').value,kw=$('#kw').value.trim();
+    const rows=data.filter(r=>{
+      if(fid&&!(r.chosen&&String(r.chosen.id)===fid)&&!r.scenes.some(s=>String(s.id)===fid))return false;
+      if(kw&&r.name.indexOf(kw)<0)return false;return true;
+    });
+    if(!rows.length){$('#tbody').innerHTML='<tr><td colspan="7" class="empty">暂无抽签记录<br>把上方「抽签链接」发给参与者即可开始</td></tr>';return}
+    $('#tbody').innerHTML=rows.map((r,i)=>{
+      const chips=r.scenes.map(s=>'<span class="chip'+(r.chosen&&r.chosen.id===s.id?' on':'')+'">'+s.name+'</span>').join('');
+      return '<tr><td style="color:#9a9088">'+(i+1)+'</td><td class="name">'+esc(r.name)+'</td><td>'+chips+'</td>'+
+        '<td style="color:#96271c;font-weight:700">'+(r.chosen?r.chosen.name:'<span style="color:#c3b7a9">未选择</span>')+'</td>'+
+        '<td class="time">'+fmt(r.createdAt)+'</td><td class="time">'+fmt(r.chosenAt)+'</td>'+
+        '<td><button class="btn small" data-id="'+r.id+'">删除</button></td></tr>';
+    }).join('');
+    Array.from(document.querySelectorAll('#tbody button[data-id]')).forEach(b=>{
+      b.onclick=()=>confirmBox('删除记录','删除后该抽签人可以重新抽签，确定继续吗？',async()=>{
+        const r=await SB.remove(b.dataset.id);if(!r.ok)alert(r.msg);load();
+      });
+    });
+  }
+
+  $('#lgBtn').onclick=login;
+  $('#refreshBtn').onclick=load;
+  $('#filter').onchange=()=>render(data);
+  $('#kw').oninput=()=>render(data);
+  /* ---------- 发布：把页面托管到自己的 Supabase Storage ---------- */
+  const BUCKET = 'lottery';
+
+  function tip(msg, bad) {
+    const el = $('#deployTip'); el.textContent = msg;
+    el.style.color = bad ? '#c0392b' : 'var(--muted)';
+  }
+
+  async function uploadOne(c, name, contentType, content) {
+    const r = await fetch(c.url + '/storage/v1/object/' + BUCKET + '/' + name, {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + (c.svc || c.anon),
+        'Content-Type': contentType,
+        'x-upsert': 'true',
+        'cache-control': 'no-cache'
+      },
+      body: content
+    });
+    if (!r.ok) {
+      let m = 'HTTP ' + r.status;
+      try { const j = await r.json(); m += ' ' + (j.message || j.error || ''); } catch (e) { }
+      throw new Error(name + ' 上传失败：' + m);
+    }
+  }
+
+  async function deploy() {
+    const c = SB.cfg();
+    if (!c.svc) { tip('需要 service_role key 才能发布（只读密钥没有上传权限）', true); return }
+    if (!c.anon) { tip('请先填写 anon key 后重新登录 —— 它会被写进抽签页，让参与者免配置直接抽签', true); return }
+    tip('正在创建存储桶并上传页面…');
+    $('#deployBtn').disabled = true;
+    try {
+      await fetch(c.url + '/storage/v1/bucket', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + c.svc, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: BUCKET, name: BUCKET, public: true })
+      }).catch(() => { });   // 桶已存在会返回 409，忽略
+
+      await uploadOne(c, 'config.js', 'application/javascript; charset=utf-8',
+        'window.LOTTERY_CONFIG = {\n  SUPABASE_URL: "' + c.url + '",\n  SUPABASE_ANON: "' + c.anon + '"\n};\n');
+
+      const files = [
+        ['index.html', 'text/html; charset=utf-8'],
+        ['admin.html', 'text/html; charset=utf-8'],
+        ['sb.js', 'application/javascript; charset=utf-8']
+      ];
+      for (const [f, ct] of files) {
+        const res = await fetch('./' + f, { cache: 'no-store' });
+        if (!res.ok) throw new Error('读取 ' + f + ' 失败');
+        await uploadOne(c, f, ct, await res.text());
+      }
+
+      const base = c.url + '/storage/v1/object/public/' + BUCKET + '/';
+      $('#shareLink').value = '抽签页（发给参与者）：\n' + base + 'index.html' +
+        '\n\n管理端（管理员自己用）：\n' + base + 'admin.html';
+      tip('发布成功！上面两条链接任何人都能直接打开，永久有效。若打开显示权限错误，到 Supabase → Storage → lottery → Configuration 确认 Public 开启即可。');
+    } catch (e) {
+      tip('发布失败：' + e.message + '　备用方案：把 lottery-public 整个目录放到任意静态托管（公司服务器/对象存储/Pages）也能直接用。', true);
+    }
+    $('#deployBtn').disabled = false;
+  }
+  $('#deployBtn').onclick = deploy;
+
+  $('#copyLink').onclick=()=>{
+    const t=$('#shareLink');t.select();
+    navigator.clipboard?navigator.clipboard.writeText(t.value).then(()=>alert('链接已复制')):document.execCommand('copy');
+  };
+  $('#exportBtn').onclick=()=>{
+    const rows=[['序号','抽签人','抽到的两个场景','最终选择','抽签时间','选择时间']];
+    data.forEach((r,i)=>rows.push([i+1,r.name,r.scenes.map(s=>s.name).join(' / '),r.chosen?r.chosen.name:'',fmt(r.createdAt),fmt(r.chosenAt)]));
+    const csv=rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\r\n');
+    const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);a.download='抽签结果.csv';a.click();URL.revokeObjectURL(a.href);
+  };
+  $('#resetBtn').onclick=()=>confirmBox('清空全部记录','将删除所有抽签记录，所有人可重新抽签。此操作不可恢复，确定继续吗？',async()=>{
+    const r=await SB.resetAll();if(!r.ok)alert(r.msg);load();
+  });
+
+  // 已保存过配置则自动登录
+  const c=SB.cfg();
+  if(c.url&&(c.svc||c.anon)){
+    $('#lgUrl').value=c.url;$('#lgSvc').value=c.svc||'';$('#lgAnon').value=c.anon||'';
+    if(c.svc)login().catch(()=>{});
+    else $('#lgErr').textContent='上次未保存 service_role key，请补全后登录';
+  }else if(window.LOTTERY_CONFIG&&window.LOTTERY_CONFIG.SUPABASE_URL){
+    $('#lgUrl').value=window.LOTTERY_CONFIG.SUPABASE_URL;
+    $('#lgAnon').value=window.LOTTERY_CONFIG.SUPABASE_ANON||'';
+  }
+})();
+</script>
+</body>
+</html>

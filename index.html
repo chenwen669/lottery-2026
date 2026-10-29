@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>四景抽签</title>
+<style>
+  :root{--red:#c0392b;--red-deep:#96271c;--gold:#c9a063;--gold-light:#e8d3a9;--ink:#2f2a26;--muted:#9a9088;--line:#efe2d2;--bg1:#fff8f0;--bg2:#ffffff}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{font-family:"PingFang SC","Microsoft YaHei","Hiragino Sans GB",system-ui,sans-serif;color:var(--ink);
+    background:radial-gradient(1200px 500px at 50% -120px,#fdeedd 0%,rgba(253,238,221,0) 70%),linear-gradient(180deg,var(--bg1) 0%,var(--bg2) 45%);
+    min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:26px 16px 48px}
+  .wrap{width:100%;max-width:520px}
+  header{text-align:center;margin-bottom:20px;position:relative}
+  .lantern{font-size:26px;letter-spacing:6px;filter:drop-shadow(0 4px 8px rgba(192,57,43,.25))}
+  h1{margin:10px 0 6px;font-size:32px;letter-spacing:8px;font-weight:800;
+    background:linear-gradient(180deg,#d4452f,#8e2b21);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .sub{color:var(--muted);font-size:13.5px;line-height:1.9;margin:0}
+  .rule{margin:14px auto 0;max-width:420px;background:#fff;border:1px dashed var(--line);border-radius:14px;
+    padding:12px 14px;font-size:12.5px;color:#7d7166;line-height:1.85;text-align:left}
+  .rule b{color:var(--red)}
+  .cfg-btn{position:fixed;top:12px;right:12px;z-index:20;border:1px solid var(--line);background:rgba(255,255,255,.9);
+    border-radius:999px;font-size:12px;color:var(--muted);padding:6px 12px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.05)}
+  .steps{display:flex;justify-content:center;gap:8px;margin:20px 0 16px}
+  .steps span{font-size:12px;color:var(--muted);background:#fff;border:1px solid var(--line);padding:5px 12px;border-radius:999px;transition:.25s}
+  .steps span.on{background:linear-gradient(180deg,#d4452f,#a8302399);color:#fff;border-color:transparent;box-shadow:0 6px 14px rgba(192,57,43,.22)}
+  .card{background:#fff;border:1px solid var(--line);border-radius:20px;box-shadow:0 18px 40px rgba(140,100,60,.08);
+    padding:24px 20px;margin-bottom:16px;animation:rise .45s cubic-bezier(.2,.8,.3,1) both}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  .hidden{display:none !important}
+  label.field{display:block;font-size:13px;color:#8a7f74;margin-bottom:8px;letter-spacing:1px}
+  input[type=text],input[type=url]{width:100%;height:52px;border:1.5px solid var(--line);border-radius:14px;padding:0 16px;
+    font-size:17px;color:var(--ink);outline:none;background:#fffdfa;transition:.2s;font-family:inherit}
+  input:focus{border-color:var(--gold);box-shadow:0 0 0 4px rgba(201,160,99,.14)}
+  input::placeholder{color:#c9bfb4}
+  .btn{width:100%;height:52px;border:none;border-radius:14px;cursor:pointer;font-size:17px;font-weight:700;letter-spacing:4px;
+    color:#fff;font-family:inherit;background:linear-gradient(180deg,#d9503a,#a83023);box-shadow:0 10px 22px rgba(168,48,35,.26);transition:.2s}
+  .btn:hover{transform:translateY(-1px)}
+  .btn:active{transform:translateY(1px)}
+  .btn:disabled{background:#e6ded4;color:#aaa;box-shadow:none;cursor:not-allowed;transform:none}
+  .btn.ghost{background:#fff;color:var(--red);border:1.5px solid var(--red-deep);box-shadow:none;letter-spacing:2px;height:46px;font-size:15px}
+  .mt{margin-top:14px}
+  .tip{min-height:20px;text-align:center;font-size:13px;color:var(--red-deep);margin-top:10px}
+  .user-line{text-align:center;font-size:14px;color:#8a7f74;margin-bottom:18px}
+  .user-line b{color:var(--red-deep);font-size:16px}
+  .lots{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .lot{position:relative;height:158px;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:14px 8px;text-align:center;overflow:hidden;border:2px solid transparent;transition:.25s;
+    background:linear-gradient(180deg,#fffafc,#fff);box-shadow:inset 0 0 0 1px var(--line),0 8px 18px rgba(140,100,60,.06)}
+  .lot .idx{font-size:11px;letter-spacing:2px;color:#b9ac9d;margin-bottom:10px}
+  .lot .sc{font-size:18px;font-weight:800;color:var(--ink);line-height:1.45;letter-spacing:1px}
+  .lot .tail{margin-top:12px;font-size:11px;color:#c3b7a9}
+  .lot.rolling .sc{color:var(--red-deep);animation:shake .12s linear infinite}
+  @keyframes shake{0%{transform:translateY(-2px) scale(.98)}50%{transform:translateY(2px) scale(1.02)}100%{transform:translateY(-2px) scale(.98)}}
+  .lot.revealed{cursor:pointer;background:linear-gradient(180deg,#fff6f2,#fff);border-color:#f0d9cf}
+  .lot.revealed .tail{color:var(--red)}
+  .lot.revealed:hover{transform:translateY(-3px);box-shadow:0 14px 26px rgba(140,100,60,.14)}
+  .lot.selected{background:linear-gradient(180deg,#d9503a,#a83023);border-color:var(--gold);transform:translateY(-4px) scale(1.02);
+    box-shadow:0 16px 30px rgba(168,48,35,.3)}
+  .lot.selected .sc,.lot.selected .idx,.lot.selected .tail{color:#fff}
+  .lot.selected .idx{color:var(--gold-light)}
+  .lot.selected::after{content:"已选定";position:absolute;top:8px;right:8px;font-size:10px;letter-spacing:1px;color:#a83023;
+    background:var(--gold-light);padding:3px 7px;border-radius:999px;font-weight:700}
+  .lot.flip{animation:flip .5s ease}
+  @keyframes flip{from{transform:rotateY(70deg) scale(.9);opacity:.2}to{transform:none;opacity:1}}
+  .step-tip{text-align:center;font-size:13px;color:var(--muted);margin:18px 0 0}
+  .step-tip b{color:var(--red-deep)}
+  .result{text-align:center;position:relative;overflow:hidden}
+  .result::before{content:"";position:absolute;inset:0;background:radial-gradient(300px 160px at 50% 0%,#fdeedd,rgba(255,255,255,0))}
+  .seal{position:relative;width:74px;height:74px;margin:6px auto 14px;border-radius:50%;background:linear-gradient(180deg,#d9503a,#a83023);
+    color:#fff;display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:800;
+    box-shadow:0 12px 26px rgba(168,48,35,.32);border:3px solid #fff;outline:2px solid var(--gold-light)}
+  .r-title{position:relative;font-size:14px;color:#8a7f74;letter-spacing:2px}
+  .r-name{position:relative;margin:8px 0 16px;font-size:26px;font-weight:800;color:var(--red-deep);letter-spacing:2px}
+  .r-scene{position:relative;margin:0 auto;padding:20px 16px;max-width:340px;border:2px dashed var(--gold);border-radius:16px;
+    background:linear-gradient(180deg,#fffaf3,#fff)}
+  .r-scene .k{font-size:12px;color:#b09b7c;letter-spacing:2px}
+  .r-scene .v{margin-top:8px;font-size:24px;font-weight:800;color:var(--red-deep);letter-spacing:2px}
+  .r-note{position:relative;margin:18px 0 0;font-size:12.5px;color:var(--muted);line-height:1.8}
+  .r-badge{position:relative;display:inline-block;margin-top:16px;font-size:11.5px;color:#7d7166;background:#f6f1ea;border-radius:999px;padding:6px 12px}
+  .reset-local{position:relative;display:block;margin:14px auto 0;background:none;border:none;color:#c9bfb4;font-size:11.5px;
+    text-decoration:underline;cursor:pointer;font-family:inherit}
+  footer{margin-top:8px;text-align:center;font-size:12px;color:#bdb3a8;line-height:1.8}
+  .toast{position:fixed;left:50%;top:24px;transform:translateX(-50%) translateY(-16px);background:rgba(47,42,38,.93);color:#fff;
+    font-size:13.5px;padding:10px 18px;border-radius:12px;opacity:0;pointer-events:none;transition:.28s;z-index:99;max-width:86vw;text-align:center}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  /* 配置弹窗 */
+  .mask{position:fixed;inset:0;background:rgba(45,38,32,.42);display:none;align-items:center;justify-content:center;padding:18px;z-index:60}
+  .mask.show{display:flex}
+  .box{background:#fff;border-radius:20px;padding:22px 20px;max-width:400px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,.24);
+    max-height:88vh;overflow:auto}
+  .box h3{margin:0 0 4px;font-size:17px}
+  .box .desc{margin:0 0 16px;font-size:12.5px;color:var(--muted);line-height:1.7}
+  .box label{display:block;font-size:12px;color:#8a7f74;margin:12px 0 6px}
+  .box input{width:100%;height:44px;border:1.5px solid var(--line);border-radius:11px;padding:0 12px;font-size:14px;font-family:inherit;outline:none}
+  .box input:focus{border-color:var(--gold)}
+  .box textarea{width:100%;min-height:64px;border:1.5px solid var(--line);border-radius:11px;padding:10px 12px;font-size:13px;
+    font-family:ui-monospace,Menlo,Consolas,monospace;resize:vertical;outline:none;word-break:break-all}
+  .row{display:flex;gap:10px;margin-top:18px}
+  .row .btn{font-size:15px;height:46px;letter-spacing:2px}
+  .hint{font-size:11.5px;color:#b9ac9d;line-height:1.7;margin-top:10px}
+</style>
+</head>
+<body>
+<button class="cfg-btn" id="cfgBtn">⚙ 配置</button>
+
+<div class="wrap">
+  <header>
+    <div class="lantern">🏮</div>
+    <h1>四景抽签</h1>
+    <p class="sub">每人限抽一次 · 一次抽中两个场景 · 任选其一提交</p>
+    <div class="rule">
+      ① 一次抽取 <b>2 个</b>场景，每人独立抽签，不受他人影响；<br>
+      ② 抽中后请<b>主动选择其中 1 个</b>，提交后即为最终结果；<br>
+      ③ 每人<b>仅可抽取一次</b>，结果仅本人可见。
+    </div>
+  </header>
+
+  <div class="steps">
+    <span id="s1" class="on">1 填写姓名</span>
+    <span id="s2">2 抽取二景</span>
+    <span id="s3">3 确认结果</span>
+  </div>
+
+  <section class="card hidden" id="needCfg">
+    <h3 style="margin:0 0 8px;font-size:17px">尚未连接云端</h3>
+    <p style="margin:0 0 16px;font-size:13px;color:var(--muted);line-height:1.8">
+      本页面需要连接 Supabase 才能记录抽签结果。<br>请点右上角「⚙ 配置」粘贴项目地址，或直接打开管理员发给你的抽签链接。
+    </p>
+    <button class="btn ghost" id="openCfg2">立即配置</button>
+  </section>
+
+  <section class="card" id="step1">
+    <label class="field">抽签人姓名</label>
+    <input type="text" id="nameInput" placeholder="请输入您的姓名" maxlength="20" autocomplete="off">
+    <div class="tip" id="errTip"></div>
+    <button class="btn" id="startBtn">开始抽签</button>
+  </section>
+
+  <section class="card hidden" id="step2">
+    <div class="user-line">抽签人：<b id="who"></b></div>
+    <div class="lots">
+      <div class="lot"><div class="idx">第一签</div><div class="sc">待揭晓</div><div class="tail"></div></div>
+      <div class="lot"><div class="idx">第二签</div><div class="sc">待揭晓</div><div class="tail"></div></div>
+    </div>
+    <p class="step-tip">请从以上两个场景中 <b>选择 1 个</b> 并提交</p>
+    <div class="tip" id="chooseTip"></div>
+    <div class="mt" id="submitWrap" style="display:none"><button class="btn" id="submitBtn">确认选择</button></div>
+  </section>
+
+  <section class="card result hidden" id="step3">
+    <div class="seal">签</div>
+    <div class="r-title">抽签人</div>
+    <div class="r-name" id="rName"></div>
+    <div class="r-scene">
+      <div class="k">最终选择场景</div>
+      <div class="v" id="rScene"></div>
+    </div>
+    <p class="r-note" id="rNote"></p>
+    <div class="r-badge">结果已提交，仅你本人可见 🚫👀</div>
+    <button class="reset-local" id="resetLocal">本机记录有误？清除后重抽</button>
+  </section>
+
+  <footer>如需重新抽签，请联系管理员解除记录</footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="mask" id="mask">
+  <div class="box">
+    <h3>⚙ 云端配置</h3>
+    <p class="desc">填入 Supabase 项目信息后即可开始抽签。匿名公钥可安全公开，不会泄露他人结果。</p>
+    <label>Supabase Project URL</label>
+    <input type="url" id="cfgUrl" placeholder="https://xxxxxx.supabase.co">
+    <label>anon / publishable key</label>
+    <textarea id="cfgKey" placeholder="eyJhbGciOi..."></textarea>
+    <div class="row">
+      <button class="btn ghost" id="cfgCancel">取消</button>
+      <button class="btn" id="cfgSave">保存并使用</button>
+    </div>
+    <p class="hint">配置保存在本机浏览器。若链接已带 # 参数，会自动读取，无需手动填写。</p>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="sb.js"></script>
+<script>
+(function(){
+  const $=s=>document.querySelector(s);
+  const SCENES=SB.SCENES, STORE='four-scene-lottery-cloud-v1';
+  const nameInput=$('#nameInput'),startBtn=$('#startBtn'),errTip=$('#errTip');
+  const step1=$('#step1'),step2=$('#step2'),step3=$('#step3'),needCfg=$('#needCfg');
+  const lots=Array.from(document.querySelectorAll('#step2 .lot'));
+  const submitWrap=$('#submitWrap'),submitBtn=$('#submitBtn'),chooseTip=$('#chooseTip');
+  const steps=[$('#s1'),$('#s2'),$('#s3')];
+  let rec=null,selectedId=null,busy=false;
+
+  function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2400)}
+  function goStep(n){steps.forEach((el,i)=>el.classList.toggle('on',i<=n-1));
+    [step1,step2,step3].forEach((el,i)=>el.classList.toggle('hidden',i+1!==n));}
+  function store(v){try{v?localStorage.setItem(STORE,JSON.stringify(v)):localStorage.removeItem(STORE)}catch(e){}}
+  function load(){try{const s=localStorage.getItem(STORE);return s?JSON.parse(s):null}catch(e){return null}}
+
+  function checkCfg(){
+    if(!SB.ready()){
+      [step1,step2,step3].forEach(el=>el.classList.add('hidden'));
+      needCfg.classList.remove('hidden'); return false;
+    }
+    needCfg.classList.add('hidden'); return true;
+  }
+
+  function showResult(){
+    $('#rName').textContent=rec.name;
+    const chosen=rec.chosen||SCENES.find(s=>s.id===rec.sceneId);
+    $('#rScene').textContent=chosen?chosen.name:'—';
+    $('#rNote').innerHTML='本次抽到：'+rec.scenes.map(s=>s.name).join('　|　')+'<br>你最终选择了：<b>'+(chosen?chosen.name:'—')+'</b>';
+    goStep(3);
+  }
+
+  async function draw(){
+    if(busy)return;
+    if(!checkCfg())return;
+    const name=nameInput.value.trim();
+    if(!name){errTip.textContent='请先填写抽签人姓名';nameInput.focus();return}
+    errTip.textContent='';
+    busy=true;startBtn.disabled=true;startBtn.textContent='抽签中…';
+    const j=await SB.draw(name);
+    busy=false;startBtn.disabled=false;startBtn.textContent='开始抽签';
+    if(!j.ok){errTip.textContent=j.msg||'抽签失败';return}
+    rec={drawId:j.drawId,name:j.name,scenes:j.scenes,chosen:null,sceneId:null};
+    selectedId=null;$('#who').textContent=j.name;goStep(2);roll();
+  }
+
+  function roll(){
+    submitWrap.style.display='none';chooseTip.textContent='';
+    const timers=[];
+    lots.forEach(el=>{
+      const sc=el.querySelector('.sc');
+      el.classList.remove('revealed','selected','flip');el.classList.add('rolling');
+      el.querySelector('.tail').textContent='洗签中…';
+      timers.push(setInterval(()=>{sc.textContent=SCENES[Math.floor(Math.random()*SCENES.length)].name},70));
+    });
+    setTimeout(()=>{
+      timers.forEach(t=>clearInterval(t));
+      lots.forEach((el,i)=>{
+        const s=rec.scenes[i];
+        el.querySelector('.sc').textContent=s.name;
+        el.querySelector('.tail').textContent='点击选定';
+        el.classList.remove('rolling');el.classList.add('revealed','flip');
+        el.onclick=()=>{selectedId=s.id;lots.forEach(x=>x.classList.remove('selected'));
+          el.classList.add('selected');submitWrap.style.display='block';chooseTip.textContent=''};
+      });
+      toast('抽签完成，请选择其中一个场景');
+    },1900);
+  }
+
+  async function submit(){
+    if(busy)return;
+    if(!selectedId){chooseTip.textContent='请先选择一个场景';return}
+    busy=true;submitBtn.disabled=true;submitBtn.textContent='提交中…';
+    const j=await SB.choose(rec.drawId,rec.name,selectedId);
+    busy=false;submitBtn.disabled=false;submitBtn.textContent='确认选择';
+    if(!j.ok){chooseTip.textContent=j.msg||'提交失败';return}
+    rec.sceneId=selectedId;
+    const chosen=SCENES.find(s=>s.id===selectedId);
+    rec.chosen=chosen;store(rec);showResult();
+  }
+
+  startBtn.addEventListener('click',draw);
+  submitBtn.addEventListener('click',submit);
+  nameInput.addEventListener('keydown',e=>{if(e.key==='Enter')draw()});
+  $('#resetLocal').addEventListener('click',()=>{store(null);location.reload()});
+
+  // 配置弹窗
+  function openCfg(){
+    const c=SB.cfg();
+    $('#cfgUrl').value=c.url||'';$('#cfgKey').value=c.anon||'';
+    $('#mask').classList.add('show');
+  }
+  $('#cfgBtn').onclick=openCfg;$('#openCfg2').onclick=openCfg;
+  $('#cfgCancel').onclick=()=>$('#mask').classList.remove('show');
+  $('#cfgSave').onclick=()=>{
+    const u=$('#cfgUrl').value.trim(),k=$('#cfgKey').value.trim();
+    if(!u||!k){toast('请完整填写地址和密钥');return}
+    SB.saveAuth(u,k);$('#mask').classList.remove('show');checkCfg();toast('配置已保存');
+  };
+
+  // 启动
+  if(checkCfg()){
+    const local=load();
+    if(local&&local.drawId){rec=local;showResult();}
+  }
+})();
+</script>
+</body>
+</html>
