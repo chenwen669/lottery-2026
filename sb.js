@@ -71,6 +71,23 @@
     return out;
   }
 
+  function sceneById(id) {
+    for (var i = 0; i < SCENES.length; i++) if (SCENES[i].id === id) return SCENES[i];
+    return null;
+  }
+
+  /* 均衡模式：由云端函数根据「各场景当前已选中人数」给出下一组组合，
+     落后场景优先出场。函数还没部署（或报错）时自动退回纯随机。 */
+  async function nextPair(c) {
+    var r = await req(c, '/rpc/lottery_next_pair', { method: 'POST', key: c.anon, body: {} });
+    if (r.error || !r.data) return null;
+    var row = Array.isArray(r.data) ? r.data[0] : r.data;
+    if (!row) return null;
+    var a = sceneById(Number(row.scene_a)), b = sceneById(Number(row.scene_b));
+    if (!a || !b || a.id === b.id) return null;
+    return Math.random() < 0.5 ? [a, b] : [b, a];
+  }
+
   function rest(c) { return c.url + '/rest/v1'; }
 
   function req(c, path, opts) {
@@ -121,7 +138,8 @@
     name = String(name || '').trim().replace(/\s+/g, ' ').slice(0, 20);
     if (!name) return { ok: false, msg: '请先填写抽签人姓名' };
 
-    var scenes = pickTwo();
+    // 优先走云端均衡函数；拿不到就纯随机（不影响抽签）
+    var scenes = (await nextPair(c)) || pickTwo();
     var drawId = genId();
     var r = await req(c, '/lottery_draws', {
       method: 'POST', key: c.anon,
