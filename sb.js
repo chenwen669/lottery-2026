@@ -19,7 +19,7 @@
     { id: 1, name: '场景一 制造业' },
     { id: 2, name: '场景二 建筑服务业' },
     { id: 3, name: '场景三 零售业' },
-    { id: 4, name: '场景四 生活服务业' }
+    { id: 4, name: '场景四 现代服务（物业）' }
   ];
 
   function ls(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
