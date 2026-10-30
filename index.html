@@ -229,11 +229,24 @@
     busy=false;startBtn.disabled=false;startBtn.textContent='开始抽签';
     if(!j.ok){errTip.textContent=j.msg||'抽签失败';return}
     rec={drawId:j.drawId,name:j.name,scenes:j.scenes,chosen:null,sceneId:null};
+    // 抽中后立刻存一份：万一这时断网/关页面，重新打开还能接着选，不会白抽一次
+    store(rec);
     selectedId=null;$('#who').textContent=j.name;goStep(2);roll();
   }
 
-  function roll(){
+  function revealLots(){
     submitWrap.style.display='none';chooseTip.textContent='';
+    lots.forEach((el,i)=>{
+      const s=rec.scenes[i];
+      el.classList.remove('rolling');el.classList.add('revealed','flip');
+      el.querySelector('.sc').textContent=s.name;
+      el.querySelector('.tail').textContent='点击选定';
+      el.onclick=()=>{selectedId=s.id;lots.forEach(x=>x.classList.remove('selected'));
+        el.classList.add('selected');submitWrap.style.display='block';chooseTip.textContent=''};
+    });
+  }
+
+  function roll(){
     const timers=[];
     lots.forEach(el=>{
       const sc=el.querySelector('.sc');
@@ -243,14 +256,7 @@
     });
     setTimeout(()=>{
       timers.forEach(t=>clearInterval(t));
-      lots.forEach((el,i)=>{
-        const s=rec.scenes[i];
-        el.querySelector('.sc').textContent=s.name;
-        el.querySelector('.tail').textContent='点击选定';
-        el.classList.remove('rolling');el.classList.add('revealed','flip');
-        el.onclick=()=>{selectedId=s.id;lots.forEach(x=>x.classList.remove('selected'));
-          el.classList.add('selected');submitWrap.style.display='block';chooseTip.textContent=''};
-      });
+      revealLots();
       toast('抽签完成，请选择其中一个场景');
     },1900);
   }
@@ -289,7 +295,11 @@
   // 启动
   if(checkCfg()){
     const local=load();
-    if(local&&local.drawId){rec=local;showResult();}
+    if(local&&local.drawId&&local.scenes){
+      rec=local;
+      if(rec.sceneId){showResult();}
+      else{$('#who').textContent=rec.name;goStep(2);revealLots();}
+    }
   }
 })();
 </script>
